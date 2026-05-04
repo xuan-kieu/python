@@ -1,73 +1,72 @@
-# Python — Dự đoán phân khúc giá điện thoại
+# Dự án Phân Loại & Tư Vấn Điện Thoại (Mobile Price Classification)
 
-Dự án Machine Learning nhằm **dự đoán phân khúc giá** điện thoại và **hỗ trợ tư vấn** người dùng (gợi ý dựa trên nhãn / xác suất dự đoán). Mã nguồn gồm pipeline huấn luyện (scikit-learn), notebook khám phá dữ liệu, và API FastAPI để triển khai dự đoán.
+Dự án Machine Learning nhằm **dự đoán phân khúc giá** điện thoại và cung cấp **tư vấn gợi ý** cho người dùng. 
+Hệ thống sử dụng các mô hình học máy (Random Forest, SVM) và giao diện trực quan bằng Streamlit.
 
-## Cấu trúc thư mục
+## 📂 Cấu trúc thư mục
 
-- `data/raw/` — dữ liệu gốc (không commit file lớn; xem `.gitignore`)
-- `data/processed/` — dữ liệu đã xử lý
-- `notebooks/` — Jupyter: EDA và thử nghiệm huấn luyện
-- `src/` — `model.py` (SVM, Random Forest), `evaluate.py` (F1-Score)
-- `api/` — backend FastAPI (`main.py`)
+- `app.py` — Ứng dụng Giao diện Web (Streamlit) cho phép người dùng nhập thông số và nhận tư vấn.
+- `train_model.py` — Script tiền xử lý dữ liệu và huấn luyện mô hình Random Forest (Pipeline + GridSearchCV) để tạo file `.pkl`.
+- `run_experiments.py` — Script nghiên cứu: Tuning SVM, đánh giá Cross-Validation (cv=10) và tự động sinh các biểu đồ (ROC, Confusion Matrix, Feature Importance).
+- `train.csv` — Dataset đầu vào (Bạn cần tự tải từ Kaggle - Mobile Price Classification và để ở thư mục này).
+- `outputs/` — Thư mục tự động sinh ra chứa các file ảnh biểu đồ để làm báo cáo.
+- `src/` — Chứa file `evaluate.py` gồm các hàm chuyên hỗ trợ vẽ biểu đồ nâng cao.
 
-## Yêu cầu
+## ⚙️ Yêu cầu & Cài đặt môi trường
 
-- Python 3.10+ (khuyến nghị)
-
-## Cài đặt môi trường
-
+Mở terminal và khởi tạo môi trường (khuyên dùng):
 ```bash
 python -m venv .venv
+# Trên Windows: .\.venv\Scripts\Activate.ps1
+# Trên Mac/Linux: source .venv/bin/activate
 ```
 
-**Windows (PowerShell):**
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-```
-
-**Linux / macOS:**
-
-```bash
-source .venv/bin/activate
-```
-
-Cài dependency:
-
+Cài đặt thư viện:
 ```bash
 pip install -r requirements.txt
 ```
+*(Yêu cầu phải có: pandas, scikit-learn, matplotlib, seaborn, streamlit).*
 
-## Chạy Jupyter (EDA / training)
+## 🚀 Hướng dẫn Sử Dụng (Quy trình chuẩn)
 
+Dự án này được chia làm 3 bước rõ ràng để bạn thực hiện từ lúc train đến lúc có giao diện:
+
+### Bước 1: Khảo sát & Vẽ biểu đồ làm Báo cáo
+Chạy script dưới đây để máy tự động Tuning SVM, chạy CV=10 và sinh ra một loạt các biểu đồ đẹp mắt vào thư mục `outputs/`:
 ```bash
-jupyter notebook notebooks/01_EDA_and_Training.ipynb
+python run_experiments.py
 ```
 
-Hoặc:
-
+### Bước 2: Huấn luyện Mô hình chính thức cho Ứng dụng
+Chạy script sau để hệ thống dùng GridSearchCV tìm ra mô hình Random Forest tốt nhất, chuẩn hóa dữ liệu và xuất ra file `rf_model.pkl`:
 ```bash
-jupyter lab
+python train_model.py
 ```
 
-## Chạy API (FastAPI)
-
+### Bước 3: Khởi chạy Giao diện (Streamlit Web App)
+Sau khi đã có file `rf_model.pkl`, bạn khởi động giao diện bằng lệnh:
 ```bash
-uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+streamlit run app.py
 ```
+Trình duyệt sẽ mở lên (thường là `http://localhost:8501`). Tại đây, bạn dùng các thanh trượt điều chỉnh cấu hình (RAM, Màn hình, Pin...) và nhấn nút để xem hệ thống dự đoán phân khúc + gợi ý mua máy!
 
-- Tài liệu tự động: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-- Kiểm tra sức khỏe: `GET /health`
+---
 
-Sau khi có mô hình đã train, cần load artifact trong `api/main.py` (ví dụ `joblib`) và nối endpoint `POST /predict`.
+## 💡 Khắc phục lỗi thường gặp (FAQ)
 
-## Quy trình gợi ý
+**1. Lỗi "Không tìm thấy mô hình. Vui lòng chạy file train_model.py trước!"**
+- **Nguyên nhân:** File `rf_model.pkl` chưa được tạo ra.
+- **Khắc phục:** Đảm bảo bạn đã đưa file `train.csv` vào thư mục, sau đó chạy lại lệnh `python train_model.py` ở **Bước 2** để huấn luyện và sinh ra mô hình. `rf_model.pkl` là một file dữ liệu (tri thức của AI), không phải file mã nguồn để chạy trực tiếp.
 
-1. Đặt file dữ liệu vào `data/raw/`, xử lý và lưu vào `data/processed/`.
-2. Khám phá và huấn luyện trong `notebooks/01_EDA_and_Training.ipynb`.
-3. Tách logic huấn luyện tái sử dụng qua `src/model.py` và đánh giá qua `src/evaluate.py`.
-4. Xuất model + preprocessor, tích hợp vào `api/main.py`.
+**2. Lỗi "streamlit is not recognized..." trên Windows PowerShell**
+- **Khắc phục:** Dùng lệnh an toàn sau đây để gọi Streamlit thông qua Python:
+  ```bash
+  python -m streamlit run app.py
+  ```
 
-## Giấy phép
-
-Thêm license phù hợp khi công khai repo.
+**3. Streamlit hỏi nhập Email (Welcome to Streamlit)**
+- Ở lần chạy đầu tiên, Streamlit sẽ hiện chữ `Email:` và tạm dừng ứng dụng. Bạn chỉ cần click chuột vào terminal và **nhấn phím Enter** (bỏ trống) là ứng dụng sẽ chạy ngay.
+- Hoặc dùng lệnh sau để bỏ qua câu hỏi vĩnh viễn:
+  ```bash
+  python -m streamlit run app.py --browser.gatherUsageStats false
+  ```
